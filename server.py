@@ -39,6 +39,24 @@ class Scan(Resource):
             logToDB(clientMd5, clientStatus)
             return jsonify(retMap)	
 		   
+#Download the file
+class Download(Resource):
+    def get(self):
+
+        #Get posted data
+        postedData = request.get_json()
+        clientMd5 = postedData['md5']
+
+        for grid_data in fs.find({'md5': clientMd5}):
+            data = grid_data.read()
+            retMap = {
+                'message': 'Found the following file',
+                'md5': clientMd5,
+		        'data': data
+	            }
+            return jsonify(retMap)	
+		   
 api.add_resource(Scan, "/scan")
+api.add_resource(Download, "/download")
 if __name__=="__main__":
     app.run(host='127.0.0.0')
