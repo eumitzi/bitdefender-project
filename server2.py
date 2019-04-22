@@ -1,21 +1,10 @@
-# not working yet
-
-from flask import Flask, request
-from flask_restful import Api, Resource
+import os
+import json
+from flask import Flask, request, redirect, url_for
+from werkzeug.utils import secure_filename
 from pymongo import MongoClient
-from datetime import datetime
-
-import redis
-from rq import Queue
 
 import gridfs
-import pefile
-import json
-
-app = Flask(__name__)
-
-r = redis.Redis()
-q = Queue(connection=r)
 
 client = MongoClient("mongodb://localhost:27017")
 #connect to the db
@@ -25,92 +14,43 @@ files = db["files"]
 
 grid_fs = gridfs.GridFS(db)
 
-#Get more data from each file
-def create_file_header(peClean):
-    fh = {}
-    fh['ns'] = peClean.FILE_HEADER.NumberOfSections
-    fh['c']  = peClean.FILE_HEADER.Characteristics
-    return fh
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
-def create_optional_header(peClean):
-    oh = {}
-    oh['m']  = peClean.OPTIONAL_HEADER.Magic
-    oh['ep'] = peClean.OPTIONAL_HEADER.AddressOfEntryPoint
-    return oh
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-def create_sections(peClean):
-    sect_arr = []
-    for section in peClean.sections:
-        new_section = {}
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-        sectionName = section.Name[:section.Name.index(0)]
-        new_section['n']    = sectionName.decode("utf-8")
-        new_section['va']   = hex(section.VirtualAddress)
-        new_section['size'] = hex(section.SizeOfRawData)
-        new_section['c']    = hex(section.Characteristics)
-        sect_arr.append(new_section)
-    return sect_arr
-
-def createJson(file_to_upload):
-
-        dict = {}
-        dict['md5'] = 'md5 pe intreg fisierul'
-        dict['fh']  = create_file_header(file_to_upload)
-        dict['oh']  = create_optional_header(file_to_upload)
-        dict['sec'] = create_sections(file_to_upload)
-        
-        print(dict)
-        #return dict
-        return json.dumps(dict)
-
-#MAKE THIS WORK!!
-#CREATE A FILE tasks.py and store all tasks there
-'''
-def upload_to_gridfs(file):
-    with grid_fs.new_file(filename=file_name) as fp:
-            fp.write(request.data)  # ??? call createJson() function to get all needed data for each file
-            file_id = fp._id
-
-        if grid_fs.find_one(file_id) is not None:
-            return json.dumps({'status': 'File saved successfully'}), 200
-        else:
-            return json.dumps({'status': 'Error occurred while saving file.'}), 500 
-
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':    
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
             
-'''
+            file_name = secure_filename(file.filename)
+            
+            with grid_fs.new_file(filename=file_name) as fp:
+                # real working scenario: 
+                # CALL FUNCTION TO GET THE IMPORTANT DATA FROM FILE
+                # UPLOAD TO GRID FS ONLY THE IMPORTANT DATA, not the whole file
+                # run this as a background job 
+                fp.write(file)
+                file_id = fp._id
 
-#Save info in gridfs
-def background_task(files):
-
-    delay = 2
-
-    print("Task running...")
-    # no need to simulate a delay later
-    print(f"Simulating a {delay} second delay")
-
-    # upload each file to gridfs
-    upload_to_gridfs(file)
+            if grid_fs.find_one(file_id) is not None:
+                return json.dumps({'status': 'File saved successfully'}), 200
+            else:
+                return json.dumps({'status': 'Error occurred while saving file.'}), 500
+    return "<!doctype html><title>Upload new File</title><h1>Upload new File</h1><form method=post enctype=multipart/form-data><p><input type=file name=file><input type=submit value=Upload></form>"
     
-    #upload data to gridfs
-
-    time.sleep(delay)
-
-    print("Task complete!")
-
-    return len(n)
-
-#add files in URL with ?data="files to be inserted"	
-@app.route("/task")
-def index():
-
-    if request.args.get("files"):
-
-        job = q.enqueue(background_task, request.args.get("files"))
-
-        return f"Task ({job.id}) added to queue at {job.enqueued_at}"
-
-    return "No files provided"
-
-
-if __name__=="__main__":
-    app.run(host='127.0.0.0')
