@@ -2,6 +2,7 @@ import requests
 import hashlib
 import pefile
 import json
+import os
 
 with open('config.json') as config_file:
     data = json.load(config_file)
