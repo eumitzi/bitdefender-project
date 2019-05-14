@@ -3,6 +3,7 @@ import hashlib
 import pefile
 import json
 import os
+import time
 
 with open('config.json') as config_file:
     data = json.load(config_file)
@@ -13,6 +14,7 @@ SERVER_LINK = data['DEFAULT']['SERVER_LINK']
 answer = {}
 answer['items'] = []
 
+
 # {items: [{file:, status:}...]}
 
 
@@ -20,7 +22,7 @@ def stage_one(files):
     items = {}
     items['id_client'] = ID_CLIENT
     files_md5 = []
-    
+
     files_to_md5 = {}
 
     for i in files:
@@ -38,19 +40,19 @@ def stage_one(files):
 
 
 def wait_for_buffer_answer(job_id):
-    
     response = requests.get(SERVER_LINK + 'scanBuffer/' + job_id).json();
-    
-    while response['status'] != 'ready':
+    print('response', response)
+
+    while response['status'] != 'ready' and response['status'] != 'failed':
         time.sleep(2)
         response = requests.get(SERVER_LINK + 'scanBuffer/' + job_id).json();
-
+        print('response', response)
     return response
 
 
 def stage_two(files):
-    #check job until ready
-    #return answer
+    # check job until ready
+    # return answer
 
     items = {}
     items['id_client'] = ID_CLIENT
@@ -58,14 +60,14 @@ def stage_two(files):
 
     files_to_md5 = {}
 
-    for file in files:
+    for file_path in files:
         item = {}
 
-        with open(file, "rb") as file:
-            item["md5"] = hashlib.md5(file.read()).hexdigest()
-            files_to_md5[item['md5']] = file
+        with open(file_path, "rb") as file_desc:
+            item["md5"] = hashlib.md5(file_desc.read()).hexdigest()
+            files_to_md5[item['md5']] = file_path
 
-        pe = pefile.PE(file)
+        pe = pefile.PE(file_path)
         sec = []
 
         for i in pe.sections:
@@ -81,8 +83,9 @@ def stage_two(files):
 
         items["buffers"].append(item)
 
+    print(items)
     job_id = requests.post(SERVER_LINK + 'scanBuffer', json=items).json()['id']
-    
+    print(job_id)
     job_json = wait_for_buffer_answer(job_id)
 
     for ans in job_json['result']:
@@ -92,10 +95,9 @@ def stage_two(files):
     return answer
 
 
-def wait_for_buffer_answer(job_id):
-    
+def wait_for_upload_answer(job_id):
     response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json();
-    
+
     while response['status'] != 'ready':
         time.sleep(2)
         response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json();
@@ -103,8 +105,9 @@ def wait_for_buffer_answer(job_id):
     return response
 
 
+'''
 def stage_three(file):
-    
+
     with open(file, "rb") as hfile:
         old_md5 = hashlib.md5(hfile.read()).hexdigest()
 
@@ -112,7 +115,7 @@ def stage_three(file):
     r = requests.post(SERVER_LINK + 'uploadFile/' + old_md5, files=upload_files)    
 
     job_json = wait_for_upload_answer(r.json()['jobID'])
-    
+
     if job_json['result']['status'] == 'clean':
         new_md5 = job_json['result']['md5_clean']
         os.remove(file)
@@ -125,3 +128,4 @@ def stage_three(file):
                         f.write(chunk)
 
     return job_json['result']['status']
+'''
