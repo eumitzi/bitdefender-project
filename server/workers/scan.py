@@ -2,12 +2,13 @@ import json
 def detect(det):
 
     buffer = det['buffers']
+    response = []
 
     for file in buffer:
         entryPoint=file['oh']['ep']
         sectionCount=0
         NumberOfSections=file['fh']['ns']
-
+        md5=file['md5']
 
         for sec in file['sec']:
             virtualAdress=sec['va']
@@ -20,13 +21,16 @@ def detect(det):
 
         if sectionCount==NumberOfSections:
             print("infected")
+            status='infected'
+
         else:
+            status='clean'
             print("clean")
 
-        #Todo: return json w/ result
-        #Todo: check for name in a list of known sections ?
+        item = {'md5': md5, 'status': status}
+        response.append(item)
 
-
-    return 1
+    response = json.dumps(response)
+    return response
 
 
