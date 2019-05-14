@@ -1,4 +1,5 @@
 import json
+
 def detect(det):
 
     buffer = det['buffers']
@@ -6,10 +7,10 @@ def detect(det):
 
     for file in buffer:
         entryPoint=file['oh']['ep']
-        sectionCount=0
+        sectionCount=1
         NumberOfSections=file['fh']['ns']
         md5=file['md5']
-
+        print(NumberOfSections)
         for sec in file['sec']:
             virtualAdress=sec['va']
             sizeOfRawData=sec['s']
@@ -19,18 +20,15 @@ def detect(det):
             else:
                 sectionCount=sectionCount+1
 
-        if sectionCount==NumberOfSections:
-            print("infected")
-            status='infected'
-
+        if sectionCount==int(NumberOfSections, 16):
+            status='malware'
         else:
+
             status='clean'
-            print("clean")
 
         item = {'md5': md5, 'status': status}
         response.append(item)
 
-    response = json.dumps(response)
     return response
 
 
