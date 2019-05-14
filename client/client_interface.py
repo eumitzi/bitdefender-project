@@ -49,7 +49,10 @@ if args.scanHash:
 
 if args.scanBuff:
     answer = client_program.stage_two(args.files)
-    print_one_two_three(answer)
+    if answer == 'failed':
+        print("Stage 2 failed, please contact BitDefender")
+    else:
+        print_one_two_three(answer)
 
 
 if args.clean:
@@ -59,6 +62,9 @@ if args.clean:
     answer['items'] = []
     for file_number in tqdm(range(no_of_files)):
         status = client_program.stage_three(args.files[file_number])
-        answer['items'].append({'file': args.files[file_number], 'status': status})
+        if status == 'failed':
+            print("Stage 3 failed, please contact BitDefender")
+        else:
+            answer['items'].append({'file': args.files[file_number], 'status': status})
     print("Finished.")
     print_one_two_three(answer)

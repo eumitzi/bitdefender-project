@@ -47,6 +47,7 @@ def wait_for_buffer_answer(job_id):
         time.sleep(2)
         response = requests.get(SERVER_LINK + 'scanBuffer/' + job_id).json();
         print('response', response)
+
     return response
 
 
@@ -83,10 +84,12 @@ def stage_two(files):
 
         items["buffers"].append(item)
 
-    print(items)
     job_id = requests.post(SERVER_LINK + 'scanBuffer', json=items).json()['id']
-    print(job_id)
+
     job_json = wait_for_buffer_answer(job_id)
+
+    if job_json['status'] == "failed":
+        return "failed"
 
     for ans in job_json['result']:
         answer['items'].append({'file': files_to_md5[ans['md5']],
@@ -98,14 +101,14 @@ def stage_two(files):
 def wait_for_upload_answer(job_id):
     response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json();
 
-    while response['status'] != 'ready':
+    while response['status'] != 'ready' and response['status'] != 'failed':
         time.sleep(2)
         response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json();
 
     return response
 
 
-'''
+
 def stage_three(file):
 
     with open(file, "rb") as hfile:
@@ -114,7 +117,13 @@ def stage_three(file):
     upload_files = {'file': open(file, 'rb')}
     r = requests.post(SERVER_LINK + 'uploadFile/' + old_md5, files=upload_files)    
 
+    if r.json()['error'] != False:
+        return 'failed'
+
     job_json = wait_for_upload_answer(r.json()['jobID'])
+
+    if job_json['status'] == 'failed':
+        return 'failed'
 
     if job_json['result']['status'] == 'clean':
         new_md5 = job_json['result']['md5_clean']
@@ -128,4 +137,3 @@ def stage_three(file):
                         f.write(chunk)
 
     return job_json['result']['status']
-'''
