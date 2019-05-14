@@ -3,15 +3,15 @@ from flask import request
 from . import DB
 import json
 scan_hash = Blueprint('scan_hash', __name__)
-
+from flask import jsonify
 
 @scan_hash.route('/scanHash',methods=["POST", "GET"])
 def scanHash():
     statusList = {}
     response = []
-
+    out={}
     data = request.get_json()
-    hashes = data['md5']
+    hashes = data['hash']
 
     #id_client = data['id_client']
 
@@ -27,6 +27,6 @@ def scanHash():
     for md5, status in statusList.items():
         response.append({'md5':md5,'status':status})
 
-    response=json.dumps(response)
-    return response
+    out['result']=response
+    return jsonify(out)
 
