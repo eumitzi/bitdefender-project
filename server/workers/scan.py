@@ -4,6 +4,8 @@ def detect(det):
 
     buffer = det['buffers']
     response = []
+    expected_sections=['.text','.data','.rsrc']
+    section_name=''
 
     for file in buffer:
         entryPoint=file['oh']['ep']
@@ -14,13 +16,14 @@ def detect(det):
         for sec in file['sec']:
             virtualAdress=sec['va']
             sizeOfRawData=sec['s']
+
             if(entryPoint< virtualAdress+sizeOfRawData):
-              #Todo: do something
+              section_name=sec['n']
               break
             else:
                 sectionCount=sectionCount+1
 
-        if sectionCount==int(NumberOfSections, 16):
+        if sectionCount==int(NumberOfSections, 16) and section_name not in expected_sections:
             status='malware'
         else:
 
