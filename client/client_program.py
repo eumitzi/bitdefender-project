@@ -11,9 +11,7 @@ with open('config.json') as config_file:
 ID_CLIENT = data['DEFAULT']['ID_CLIENT']
 SERVER_LINK = data['DEFAULT']['SERVER_LINK']
 
-answer = {}
-answer['items'] = []
-
+answer = {'items': []}
 
 # {items: [{file:, status:}...]}
 
@@ -40,12 +38,12 @@ def stage_one(files):
 
 
 def wait_for_buffer_answer(job_id):
-    response = requests.get(SERVER_LINK + 'scanBuffer/' + job_id).json();
+    response = requests.get(SERVER_LINK + 'scanBuffer/' + job_id).json()
     print('response', response)
 
     while response['status'] != 'ready' and response['status'] != 'failed':
         time.sleep(2)
-        response = requests.get(SERVER_LINK + 'scanBuffer/' + job_id).json();
+        response = requests.get(SERVER_LINK + 'scanBuffer/' + job_id).json()
         print('response', response)
 
     return response
@@ -99,11 +97,11 @@ def stage_two(files):
 
 
 def wait_for_upload_answer(job_id):
-    response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json();
+    response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json()
 
     while response['status'] != 'ready' and response['status'] != 'failed':
         time.sleep(2)
-        response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json();
+        response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json()
 
     return response
 
@@ -117,7 +115,7 @@ def stage_three(file):
     upload_files = {'file': open(file, 'rb')}
     r = requests.post(SERVER_LINK + 'uploadFile/' + old_md5, files=upload_files)    
 
-    if r.json()['error'] != False:
+    if r.json()['error']:
         return 'failed'
 
     job_json = wait_for_upload_answer(r.json()['jobID'])

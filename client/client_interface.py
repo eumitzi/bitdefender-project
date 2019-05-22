@@ -16,8 +16,8 @@ parser.add_argument("-c", "--clean", help="disinfects the files", action="store_
 
 args = parser.parse_args()
 
+# {items: [{file: '', status: ''}...]}
 
-#{items: [{file: '', status: ''}...]}
 
 def print_one_two_three(answer):
     items = answer['items']
@@ -34,37 +34,81 @@ def print_one_two_three(answer):
             print(colored(ans['file'], 'blue'), 'is', colored(ans['status'], 'grey'))
 
 
-if (not args.scanHash) and (not args.scanBuff) and (not args.clean):
-    parser.error('No options provided. Please specify exaclty one.')
-
-
 if (args.scanHash + args.scanBuff + args.clean) >= 2:
-    parser.error('Too many options provided. Please specify exactly one.')
+    parser.error('Too many options provided. Please specify at most one.')
+
+
+def scanH(files):
+    answer = client_program.stage_one(files)
+    print_one_two_three(answer)
+    return answer
 
 
 if args.scanHash:
-    answer = client_program.stage_one(args.files)
-    print_one_two_three(answer)
+    scanH(args.files)
 
 
-if args.scanBuff:
-    answer = client_program.stage_two(args.files)
+def scanB(files):
+    answer = client_program.stage_two(files)
     if answer == 'failed':
         print("Stage 2 failed, please contact BitDefender")
     else:
         print_one_two_three(answer)
 
+    return answer
 
-if args.clean:
-    no_of_files = len(args.files)
+
+if args.scanBuff:
+    scanB(args.files)
+
+
+def clean(files):
+    no_of_files = len(files)
     files_done = 0
-    answer = {}
-    answer['items'] = []
+    answer = {'items': []}
     for file_number in tqdm(range(no_of_files)):
-        status = client_program.stage_three(args.files[file_number])
+        status = client_program.stage_three(files[file_number])
         if status == 'failed':
-            print("Stage 3 failed, please contact BitDefender")
+            print("Stage 3 failed for file "
+                  + files[file_number] +
+                  ", please contact BitDefender")
         else:
-            answer['items'].append({'file': args.files[file_number], 'status': status})
+            answer['items'].append({'file': files[file_number], 'status': status})
     print("Finished.")
     print_one_two_three(answer)
+
+    return answer
+
+
+if args.clean:
+    clean(args.files)
+
+
+def main_path(files):
+    print("Starting Stage I")
+    answer_one = scanH(files)
+
+    files_two = []
+    files_three = []
+
+    for file in answer_one['items']:
+        if file['status'] == 'more_data':
+            files_two.append(file['file'])
+        elif file['status'] == 'malware':
+            files_three.append(file['file'])
+
+    print("\n")
+    print("Starting Stage II")
+    answer_two = scanB(files_two)
+
+    for file in answer_two['items']:
+        if file['status'] == 'malware':
+            files_three.append(file['file'])
+
+    print("\n")
+    print("Starting Stage III")
+    answer_three = clean(files_three)
+
+
+if (not args.scanHash) and (not args.scanBuff) and (not args.clean):
+    main_path(args.files)
