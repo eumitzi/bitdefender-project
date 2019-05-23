@@ -70,7 +70,7 @@ def stage_two(files):
         sec = []
 
         for i in pe.sections:
-            section = {"n": i.Name[:i.Name.index(b'\0')].decode("utf-8"), 'sa': hex(i.VirtualAddress),
+            section = {"n": i.Name[:i.Name.index(b'\0')].decode("utf-8"), 'va': hex(i.VirtualAddress),
                        's': hex(i.SizeOfRawData), 'c': hex(i.Characteristics)}
             sec.append(section)
 
@@ -113,7 +113,7 @@ def stage_three(file):
         old_md5 = hashlib.md5(hfile.read()).hexdigest()
 
     upload_files = {'file': open(file, 'rb')}
-    r = requests.post(SERVER_LINK + 'uploadFile/' + old_md5, files=upload_files)    
+    r = requests.post(SERVER_LINK + 'uploadFile/' + old_md5, files=upload_files)
 
     if r.json()['error']:
         return 'failed'

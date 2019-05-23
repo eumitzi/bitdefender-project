@@ -99,15 +99,18 @@ def main_path(files):
 
     print("\n")
     print("Starting Stage II")
-    answer_two = scanB(files_two)
+    if len(files_two) > 0:
+        answer_two = scanB(files_two)
 
-    for file in answer_two['items']:
-        if file['status'] == 'malware':
-            files_three.append(file['file'])
+        for file in answer_two['items']:
+            if file['status'] == 'malware':
+                files_three.append(file['file'])
 
     print("\n")
     print("Starting Stage III")
-    answer_three = clean(files_three)
+
+    if len(files_three) > 0:
+        answer_three = clean(files_three)
 
 
 if (not args.scanHash) and (not args.scanBuff) and (not args.clean):
