@@ -17,9 +17,8 @@ def start_cleanup(md5):
 	
 	# step 2 - clean
 	byte_data = grid_fs_file.read(size=grid_fs_file.length) # byte 
-	str_data  = byte_data.decode("utf-8", "ignore") # str - actually not needed 
 	
-	pe = pefile.PE(data=byte_data, fast_load=True) 
+	pe = pefile.PE(data=byte_data, fast_load=True)
 	
 	print(pe.sections[0].Name.decode('utf-8'))
 	
@@ -29,12 +28,13 @@ def start_cleanup(md5):
 		
 	# step 3 - insert file in bd
 	with grid_fs.new_file(filename=grid_fs_file.filename) as fp:
-                fp.write(pe.dump_info().encode())
+                fp.write(pe.write())
 	
 	# step 4 - compute md5 clean file
 	md5_clean_file = hashlib.md5(pe.dump_info().encode()).hexdigest()
 	
 	result = {}
+
 	# step 5 return job result, md5 clean file
 	if md5_clean_file:
 		
