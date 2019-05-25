@@ -2,6 +2,7 @@ import argparse
 import client_program
 from tqdm import tqdm
 from termcolor import colored
+import os
 
 parser = argparse.ArgumentParser()
 
@@ -16,7 +17,31 @@ parser.add_argument("-c", "--clean", help="disinfects the files", action="store_
 
 args = parser.parse_args()
 
+files_and_dirs = args.files
+
+
+def get_files(files_dirs):
+    answer = []
+
+    for i in files_dirs:
+        if os.path.isfile(i):
+            answer.append(i)
+        else:
+            answer.extend(
+                get_files(
+                    map(lambda x: i + '/' + x,
+                        os.listdir(i))))
+
+    return answer
+
+
+files = get_files(files_and_dirs)
 # {items: [{file: '', status: ''}...]}
+#
+# def get_files(dir_list):
+#
+#
+# files = get_files(files_and_dirs)
 
 
 def print_one_two_three(answer):
@@ -45,7 +70,7 @@ def scanH(files):
 
 
 if args.scanHash:
-    scanH(args.files)
+    scanH(files)
 
 
 def scanB(files):
@@ -59,7 +84,7 @@ def scanB(files):
 
 
 if args.scanBuff:
-    scanB(args.files)
+    scanB(files)
 
 
 def clean(files):
@@ -81,7 +106,7 @@ def clean(files):
 
 
 if args.clean:
-    clean(args.files)
+    clean(files)
 
 
 def main_path(files):
@@ -114,4 +139,4 @@ def main_path(files):
 
 
 if (not args.scanHash) and (not args.scanBuff) and (not args.clean):
-    main_path(args.files)
+    main_path(files)

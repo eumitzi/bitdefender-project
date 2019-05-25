@@ -98,8 +98,9 @@ def stage_two(files):
 
 def wait_for_upload_answer(job_id):
     response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json()
-
+    print(response)
     while response['status'] != 'ready' and response['status'] != 'failed':
+        print(response)
         time.sleep(2)
         response = requests.get(SERVER_LINK + 'uploadFile/' + job_id).json()
 
@@ -112,8 +113,11 @@ def stage_three(file):
     with open(file, "rb") as hfile:
         old_md5 = hashlib.md5(hfile.read()).hexdigest()
 
-    upload_files = {'file': open(file, 'rb')}
-    r = requests.post(SERVER_LINK + 'uploadFile/' + old_md5, files=upload_files)
+
+
+    with open(file, "rb") as hfile:
+        upload_files = {'file': hfile}
+        r = requests.post(SERVER_LINK + 'uploadFile/' + old_md5, files=upload_files)
 
     if r.json()['error']:
         return 'failed'
