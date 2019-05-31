@@ -28,6 +28,21 @@ Then something more.
 ```
 shutdown now
 ```
+
+### Tests
+
+For the server:
+```
+# This "installs" the code.
+# This means you'll be able to import your code, regardless of your current active directory.
+pip install -e server
+```
+
+```
+# Now let's run the tests:
+pytest
+```
+
 ## Usage
 
 More verbose version of the help message
